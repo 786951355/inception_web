@@ -77,6 +77,7 @@ def getAlldbByDbconfig(dbConfigName):
             conn.close()
     return listDb
 
+
 def mysqladvisorcheck(sqlContent, dbConfigName, dbUse):
     dbConfig = Dbconfig.query.filter(Dbconfig.name == dbConfigName).first()
     if not dbConfig:
@@ -91,6 +92,8 @@ def mysqladvisorcheck(sqlContent, dbConfigName, dbUse):
     if stdout:
         return stdout
     return stderr
+
+
 def sqlautoReview(sqlContent, dbConfigName, isBackup=False):
     '''
     将sql交给inception进行自动审核，并返回审核结果。
@@ -119,7 +122,6 @@ def sqlautoReview(sqlContent, dbConfigName, isBackup=False):
               %s\
               inception_magic_commit;" % (dbUser, dbPassword, dbHost, str(dbPort), sqlContent)
         result = fetchall(sql, inception_host, inception_port, '', '', '')
-
     return result
 
 
@@ -217,6 +219,8 @@ def getRollbackSqlList(workId):
                 listBackupSql.append(listBackup[rownum][0])
     return listBackupSql
 
+
+
 def getSlowLogList(dbId, hour):
     dbDt=(datetime.now()-timedelta(hours=hour)).strftime('%Y-%m-%d %H:%M:%S')
     dbConfig=Dbconfig.query.filter(Dbconfig.id == dbId).first()
@@ -225,6 +229,7 @@ def getSlowLogList(dbId, hour):
     slowlogList=fetchall(sql, dbConfig.host, dbConfig.port,
                          dbConfig.user, base64.b64decode(dbConfig.password), '')
     return slowlogList
+
 
 def getdbReport(dbId, mem):
     dbConfig = Dbconfig.query.get(dbId)
@@ -245,8 +250,6 @@ def getdbReport(dbId, mem):
     else:
         print u'错误：'+stderr
     return dbReport
-
-
 
 
 def fetchall(sql, paramHost, paramPort, paramUser, paramPasswd, paramDb):
@@ -275,15 +278,20 @@ def fetchall(sql, paramHost, paramPort, paramUser, paramPasswd, paramDb):
             conn.close()
     return result
 
+
 def send_async_email(app, msg):
     with app.app_context():
         mail.send(msg)
+
+
 def send_email(subject, body, receiver):
     msg = Message(subject, recipients=[receiver])
     msg.html = body
     thr = Thread(target=send_async_email, args=[app, msg])
     thr.start()
     return u'发送成功'
+
+
 def checksqladvisor():
     sqladvisordir = base_dir + '/sqladvisor'
     if not os.path.exists(sqladvisordir):
@@ -295,16 +303,16 @@ def checksqladvisor():
     else:
         return u'SQLAdvisor未安装'
 
+
 def stoptimer(work):
     for item in threading.enumerate():
         if item.name == work.name:
             item.cancel()
+
+
 def starttimer(work, executetime):
     t = threading.Timer(executetime, executeFinal, [work.id])
     t.name = work.name
     t.setDaemon(True)
     t.start()
-
-
-
 

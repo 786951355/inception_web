@@ -22,10 +22,12 @@ audit_permission = Permission(RoleNeed('audit'))
 def before_request():
     g.user = current_user
 
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
+
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
@@ -56,9 +58,10 @@ def logout():
     logout_user()
     for key in ('identity.name', 'identity.auth_type'):
         session.pop(key, None)
-    identity_changed.send(current_app._get_current_object(),
-                          identity=AnonymousIdentity())
+    identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
     return redirect('login')
+
+
 @app.route('/passwd', methods = ['GET', 'POST'])
 @login_required
 def passwd():
@@ -95,6 +98,8 @@ def mysql_db_create():
         db.session.commit()
         return redirect('mysql_db')
     return render_template('mysql_db_create.html', form=form)
+
+
 @app.route('/mysql_db/update/<int:id>', methods = ['GET', 'POST'])
 @admin_permission.require()
 def mysql_db_update(id):
@@ -111,8 +116,9 @@ def mysql_db_update(id):
         dbconfig.update_time = datetime.now()
         db.session.commit()
         return redirect('mysql_db')
-
     return render_template('mysql_db_update.html', form=form, dbconfig=dbconfig)
+
+
 @app.route('/mysql_db/delete/<int:id>')
 @admin_permission.require()
 def mysql_db_delete(id):
@@ -121,12 +127,14 @@ def mysql_db_delete(id):
     db.session.commit()
     return redirect('mysql_db')
 
+
 @app.route('/user')
 @admin_permission.require()
 def user():
     users = User.query.filter(User.role != 'admin')
-
     return render_template('user.html', users=users)
+
+
 @app.route('/user/create', methods = ['GET', 'POST'])
 @admin_permission.require()
 def user_create():
@@ -141,6 +149,8 @@ def user_create():
         db.session.commit()
         return redirect('user')
     return render_template('user_create.html', form=form)
+
+
 @app.route('/user/update/<int:id>', methods = ['GET', 'POST'])
 @admin_permission.require()
 def user_update(id):
@@ -152,6 +162,8 @@ def user_update(id):
         db.session.commit()
         return redirect('user')
     return render_template('user_update.html', form=form, user=user)
+
+
 @app.route('/user/delete/<int:id>', methods = ['GET', 'POST'])
 @admin_permission.require()
 def user_delete(id):
@@ -159,6 +171,8 @@ def user_delete(id):
     db.session.delete(user)
     db.session.commit()
     return redirect('user')
+
+
 @app.route('/user/srole/<int:id>')
 @admin_permission.require()
 def user_srole(id):
@@ -169,6 +183,8 @@ def user_srole(id):
         user.srole = 0
     db.session.commit()
     return redirect('user')
+
+
 
 @app.route('/user/db_alloc/<int:id>', methods = ['GET', 'POST'])
 @admin_permission.require()
@@ -185,8 +201,9 @@ def user_db_alloc(id):
         user.dbs.append(dbconfig)
         db.session.commit()
         return redirect(url_for('user_db_alloc', id=id))
-
     return render_template('user_db_alloc.html', form=form, user=user, userdbconfigs=userdbconfigs, alldbconfigs=alldbconfigs)
+
+
 @app.route('/user/db_delete/<int:userid><int:dbid>')
 @admin_permission.require()
 def user_db_delete(userid,dbid):
@@ -241,16 +258,16 @@ def admin_chart(days=7):
                                 func.count(Work.dev).label('count')).filter(Work.create_time >= dayago).group_by(Work.dev)
     audit_dist = db.session.query(Work.audit.label('audit'),
                                 func.count(Work.dev).label('count')).filter(Work.create_time >= dayago).group_by(Work.audit)
-
-
     return render_template('admin_chart.html',dayrange=dayrange, daycounts=daycounts, workstatus=workstatus, dev_dist=dev_dist, audit_dist=audit_dist, days=days)
+
+
 @app.route('/modules')
 @admin_permission.require()
 def modules():
     checksqladvisorresult=checksqladvisor()
-
-
     return render_template('modules.html',checksqladvisorresult=checksqladvisorresult)
+
+
 @app.route('/sqladvisor_install')
 @admin_permission.require()
 def sqladvisor_install():
@@ -270,6 +287,8 @@ def sqladvisor_install():
             shell=True)
     time.sleep(180)
     return redirect('modules')
+
+
 @app.route('/sqladvisor_uninstall')
 @admin_permission.require()
 def sqladvisor_uninstall():
@@ -285,15 +304,16 @@ def slowlog():
         dbconfigs = current_user.dbs
     else:
         dbconfigs = Dbconfig.query.all()
-
     return render_template('slowlog.html', dbconfigs=dbconfigs)
+
+
 @app.route('/view_slowlog/<int:dbid>/<int:t>')
 @login_required
 def view_slowlog(dbid, t=1):
     slowloglist=getSlowLogList(dbid, t)
     dbconfig = Dbconfig.query.get(dbid)
-
     return render_template('view_slowlog.html', slowloglist=slowloglist, dbconfig=dbconfig)
+
 
 @app.route('/dbreport/<int:id>', methods = ['GET', 'POST'])
 @admin_permission.require()
@@ -311,12 +331,13 @@ def dbreport(id):
         db.session.commit()
     return render_template('dbreport.html', form=form, dbconfig=dbconfig, dbreports=dbreports)
 
+
 @app.route('/dbreport_view/<int:id>')
 @admin_permission.require()
 def dbreport_view(id):
     dbreport = Report.query.get(id)
-
     return render_template('dbreport_view.html', dbreport=dbreport)
+
 
 @app.route('/dbreport_delete/<int:dbid>/<int:id>')
 @admin_permission.require()
@@ -327,14 +348,13 @@ def dbreport_delete(dbid, id):
     return redirect(url_for('dbreport', id=dbid))
 
 
-
-
-
 @app.route('/dev_work')
 @dev_permission.require()
 def dev_work():
     works = Work.query.filter(Work.dev == current_user.name)
     return render_template('dev_work.html', works=works)
+
+
 @app.route('/dev_work/create', methods = ['GET', 'POST'])
 @dev_permission.require()
 def dev_work_create():
@@ -362,7 +382,6 @@ def dev_work_create():
             audit=User.query.filter(User.name == work.audit).first()
             work.srole = audit.srole
             work.sql_content = sqlContent
-            print(sqlContent)
             result = sqlautoReview(sqlContent, dbConfig, isBackup)
             if result or len(result) != 0:
                 jsonResult = json.dumps(result)
@@ -388,8 +407,9 @@ def dev_work_create():
                 flash('inception返回的结果集为空！可能是SQL语句有语法错误!')
         else:
             flash(u'SQL语句结尾没有以;结尾，请重新修改并提交！')
-
     return render_template('dev_work_create.html', form=form, db_configs=db_configs, audits=audits)
+
+
 @app.route('/dev_work/update/<int:id>', methods = ['GET', 'POST'])
 @dev_permission.require()
 def dev_work_update(id):
@@ -415,7 +435,6 @@ def dev_work_update(id):
                 work.sql_content = sqlContent
                 db.session.commit()
 
-
                 if mailonoff == 'ON':
                     audit = User.query.filter(User.name == work.audit).first()
                     send_email(u'【inception_web】修改工单通知', u'您好，你有一条刚修改的工单（' + work.name + u'），请审核，谢谢！', audit.email)
@@ -425,6 +444,8 @@ def dev_work_update(id):
         else:
             flash(u'SQL语句结尾没有以;结尾，请重新修改并提交！')
     return render_template('dev_work_update.html', form=form, db_configs=db_configs, audits=audits, work=work)
+
+
 @app.route('/dev_work/delete/<int:id>', methods = ['GET', 'POST'])
 @dev_permission.require()
 def dev_work_delete(id):
@@ -458,6 +479,7 @@ def dev_work_check():
     finalResult['data'] = result
     return json.dumps(finalResult)
 
+
 @app.route('/list_db', methods = ['POST'])
 @dev_permission.require()
 def list_db():
@@ -467,6 +489,7 @@ def list_db():
     if dbConfigName:
         listdb = getAlldbByDbconfig(dbConfigName)
     return json.dumps(listdb)
+
 
 @app.route('/sqladvisor_check', methods = ['GET', 'POST'])
 @dev_permission.require()
@@ -492,6 +515,7 @@ def sqladvisor_check():
         return json.dumps(sqlResult)
     dbconfigs=current_user.dbs
     return render_template('sqladvisor_check.html', dbconfigs=dbconfigs)
+
 
 @app.route('/dev_chart/<int:days>')
 @dev_permission.require()
@@ -545,6 +569,8 @@ def audit_work():
 def audit_work_pending():
     works = Work.query.filter(Work.audit == current_user.name, Work.status == 1)
     return render_template('audit_work_pending.html', works=works)
+
+
 @app.route('/audit_work/assign/<int:id>', methods = ['GET', 'POST'])
 @audit_permission.require()
 def audit_work_assign(id):
@@ -562,6 +588,7 @@ def audit_work_assign(id):
         return redirect('audit_work')
 
     return render_template('audit_work_assign.html', form=form, work=work, audits=audits)
+
 
 @app.route('/audit_work/reject/<int:id>')
 @audit_permission.require()
@@ -711,7 +738,6 @@ def audit_chart(days=7):
     return render_template('audit_chart.html',dayrange=dayrange, daycounts=daycounts, workstatus=workstatus, days=days)
 
 
-
 @app.route('/work/view/<int:id>')
 @login_required
 def work_view(id):
@@ -725,6 +751,7 @@ def work_view(id):
     else:
         review_content=json.loads(work.auto_review)
     return render_template('work_view.html', work=work, review_content=review_content,backtimer=backtimer)
+
 
 @app.route('/work/stop/<int:id>')
 @login_required

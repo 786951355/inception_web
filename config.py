@@ -7,14 +7,15 @@ SQLALCHEMY_TRACK_MODIFICATIONS=False
 CSRF_ENABLED = True
 
 # Flask-Mail settings
+# if send mail , set MAIL_ON_OFF is ON
 MAIL_ON_OFF='OFF'
 MAIL_SERVER='smtp.sina.com'
 MAIL_PORT=587
 MAIL_USE_TLS=True
 MAIL_USE_SSL=False
-MAIL_USERNAME='chen_kuixy@sina.cn'
+MAIL_USERNAME='test@sina.cn'
 MAIL_PASSWORD='test'
-MAIL_DEFAULT_SENDER='"chen_kuixy@sina.cn"<chen_kuixy@sina.cn>'
+MAIL_DEFAULT_SENDER='"test@sina.cn"<test@sina.cn>'
 
 #Inception settings
 
