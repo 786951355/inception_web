@@ -123,71 +123,77 @@ def sqlautoReview(sqlContent, dbConfigName, isBackup=False):
     return result
 
 
-def executeFinal(id):
+def executeFinal(id,sqlcontent=None):
     '''
     将sql交给inception进行最终执行，并返回执行结果。
     '''
     work = Work.query.filter(Work.id == id).first()
-    if work.status == 3 or work.status == 0:
+    if sqlcontent is None and (work.status == 3 or work.status == 0):
         return redirect('audit_work')
-    work.status = 3
-    work.man_review_time = datetime.now()
-    db.session.commit()
-    dbConfig = Dbconfig.query.filter(Dbconfig.name == work.db_config).first()
-    if not dbConfig:
-        print("Error: 数据库配置不存在")
-    dbHost = dbConfig.host
-    dbPort = dbConfig.port
-    dbUser = dbConfig.user
-    dbPassword = base64.b64decode(dbConfig.password)
-
-    strBackup = ""
-    if work.backup == True:
-        strBackup = "--enable-remote-backup;"
     else:
-        strBackup = "--disable-remote-backup;"
+        work.status = 3
+        work.man_review_time = datetime.now()
+        db.session.commit()
+        dbConfig = Dbconfig.query.filter(Dbconfig.name == work.db_config).first()
+        if not dbConfig:
+            print("Error: 数据库配置不存在")
+        dbHost = dbConfig.host
+        dbPort = dbConfig.port
+        dbUser = dbConfig.user
+        dbPassword = base64.b64decode(dbConfig.password)
 
-    # 根据inception的要求，执行之前最好先split一下
-    sqlSplit = "/*--user=%s; --password=%s; --host=%s; --enable-execute;--port=%s; --enable-ignore-warnings;--enable-split;*/\
-             inception_magic_start;\
-             %s\
-             inception_magic_commit;" % (dbUser, dbPassword, dbHost, str(dbPort), work.sql_content)
-    splitResult = fetchall(sqlSplit, inception_host, inception_port, '', '', '')
-    tmpList = []
+        strBackup = ""
+        if work.backup == True:
+            strBackup = "--enable-remote-backup;"
+        else:
+            strBackup = "--disable-remote-backup;"
+        if sqlcontent is None:
+            sqllist = work.sql_content
+        else:
+            sqllist = '\r\n'.join(sqlcontent)
+        # 根据inception的要求，执行之前最好先split一下
+        sqlSplit = "/*--user=%s; --password=%s; --host=%s; --enable-execute;--port=%s; --enable-ignore-warnings;--enable-split;*/\
+                 inception_magic_start;\
+                 %s\
+                 inception_magic_commit;" % (dbUser, dbPassword, dbHost, str(dbPort), sqllist)
+        splitResult = fetchall(sqlSplit, inception_host, inception_port, '', '', '')
+        tmpList = []
 
-    # 对于split好的结果，再次交给inception执行.这里无需保持在长连接里执行，短连接即可.
-    for splitRow in splitResult:
-        sqlTmp = splitRow[1]
-        sqlExecute = "/*--user=%s;--password=%s;--host=%s;--enable-execute;--port=%s; --enable-ignore-warnings;%s*/\
-                    inception_magic_start;\
-                    %s\
-                    inception_magic_commit;" % (dbUser, dbPassword, dbHost, str(dbPort), strBackup, sqlTmp)
+        # 对于split好的结果，再次交给inception执行.这里无需保持在长连接里执行，短连接即可.
+        for splitRow in splitResult:
+            sqlTmp = splitRow[1]
+            sqlExecute = "/*--user=%s;--password=%s;--host=%s;--enable-execute;--port=%s; --enable-ignore-warnings;%s*/\
+                        inception_magic_start;\
+                        %s\
+                        inception_magic_commit;" % (dbUser, dbPassword, dbHost, str(dbPort), strBackup, sqlTmp)
 
-    executeResult = fetchall(sqlExecute, inception_host, inception_port, '', '', '')
-    tmpList.append(executeResult)
+            executeResult = fetchall(sqlExecute, inception_host, inception_port, '', '', '')
+            tmpList.append(executeResult)
 
-    # 二次加工一下，目的是为了和sqlautoReview()函数的return保持格式一致，便于在detail页面渲染.
-    finalStatus = 0
-    finalList = []
-    for splitRow in tmpList:
-        for sqlRow in splitRow:
-            # 如果发现任何一个行执行结果里有errLevel为1或2，并且stagestatus列没有包含Execute Successfully字样，则判断最终执行结果为有异常.
-            if (sqlRow[2] == 1 or sqlRow[2] == 2) and re.match(r"\w*Execute Successfully\w*", sqlRow[3]) is None:
-                finalStatus = 4
-            finalList.append(list(sqlRow))
+        # 二次加工一下，目的是为了和sqlautoReview()函数的return保持格式一致，便于在detail页面渲染.
+        finalStatus = 0
+        finalList = []
+        for splitRow in tmpList:
+            for sqlRow in splitRow:
+                # 如果发现任何一个行执行结果里有errLevel为1或2，并且stagestatus列没有包含Execute Successfully字样，则判断最终执行结果为有异常.
+                if (sqlRow[2] == 1 or sqlRow[2] == 2) and re.match(r"\w*Execute Successfully\w*", sqlRow[3]) is None:
+                    finalStatus = 4
+                finalList.append(list(sqlRow))
 
-            jsonResult = json.dumps(finalList)
-            work.execute_result = jsonResult
-            work.finish_time = datetime.now()
-            work.status = finalStatus
-            db.session.commit()
+                jsonResult = json.dumps(finalList)
+                work.execute_result = jsonResult
+                work.finish_time = datetime.now()
+                work.status = finalStatus
+                db.session.commit()
 
 
 
 def getRollbackSqlList(workId):
     work = Work.query.filter(Work.id == workId).first()
+    print(work)
     listExecuteResult = json.loads(work.execute_result)
     listBackupSql = []
+    print(listBackupSql)
     for row in listExecuteResult:
         # 获取backup_dbname
         if row[8] == 'None':
@@ -258,6 +264,7 @@ def fetchall(sql, paramHost, paramPort, paramUser, paramPasswd, paramDb):
         cur = conn.cursor()
         ret = cur.execute(sql)
         result = cur.fetchall()
+        print(result)
         result = result
     except MySQLdb.Error as e:
         print("Mysql Error %d: %s" % (e.args[0], e.args[1]))

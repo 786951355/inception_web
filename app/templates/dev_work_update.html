@@ -5,94 +5,99 @@
 
 <div class="right_col" role="main">
     <div class="">
-        <form id="demo-form2" data-parsley-validate class="form-horizontal form-label-left" method="post" action="{{ url_for('dev_work_update',id=work.id) }}">
+        <form id="demo-form2" data-parsley-validate class="form-horizontal form-label-left" method="post"
+              action="{{ url_for('dev_work_update',id=work.id) }}">
             {{ form.hidden_tag() }}
-        <div class="col-md-3 col-sm-3 col-xs-12">
+            <div class="col-md-3 col-sm-3 col-xs-12">
                 <div class="x_panel">
-                  <div class="x_title">
-                    <h2>新增工单</h2>
-                    <div class="clearfix"></div>
-                  </div>
-                  <div class="x_content">
-                    <br />
+                    <div class="x_title">
+                        <h2>新增工单</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <br/>
+                        <div class="form-group">
+                            <label class="control-label col-md-4 col-sm-4 col-xs-12" for="first-name">工单名<span class="required">*</span></label>
+                            <input id="{{ form.name.name }}" name="{{ form.name.name }}" type="hidden" value="{{ work.name }}">
+                            <div class="col-md-8 col-sm-8 col-xs-12">
+                                {{ work.name }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-4 col-sm-4 col-xs-12" for="last-name">数据库<span
+                                    class="required">*</span>
+                            </label>
+                            <input id="{{ form.db_config.name }}" name="{{ form.db_config.name }}" type="hidden"
+                                   value="{{ work.db_config }}">
+                            <div class="col-md-8 col-sm-8 col-xs-12">
+                                {{ work.db_config }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-4 col-sm-4 col-xs-12">备份<span class="required">*</span></label>
+                            <input id="{{ form.backup.name }}" name="{{ form.backup.name }}" type="hidden" value="{{ work.backup }}">
+                            <div class="col-md-8 col-sm-8 col-xs-12">
+                                {% if work.backup == true %}是{% else %}否{% endif %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-4 col-sm-4 col-xs-12" for="last-name">审核人员<span class="required">*</span></label>
+                            <input id="{{ form.audit.name }}" name="{{ form.audit.name }}" type="hidden" value="{{ work.audit }}">
+                            <div class="col-md-8 col-sm-8 col-xs-12">
+                                {{ work.audit }}
+                            </div>
+                        </div>
 
-                      <div class="form-group">
-                        <label class="control-label col-md-4 col-sm-4 col-xs-12" for="first-name">工单名<span class="required">*</span>
-                        </label>
-                          <input id="{{ form.name.name }}" name="{{ form.name.name }}" type="hidden" value="{{ work.name }}">
-                        <div class="col-md-8 col-sm-8 col-xs-12">
-                          {{ work.name }}
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label class="control-label col-md-4 col-sm-4 col-xs-12" for="last-name">数据库<span class="required">*</span>
-                        </label>
-                          <input id="{{ form.db_config.name }}" name="{{ form.db_config.name }}" type="hidden" value="{{ work.db_config }}">
-                        <div class="col-md-8 col-sm-8 col-xs-12">
-                          {{ work.db_config }}
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label class="control-label col-md-4 col-sm-4 col-xs-12">备份<span class="required">*</span></label>
-                          <input id="{{ form.backup.name }}" name="{{ form.backup.name }}" type="hidden" value="{{ work.backup }}">
-                        <div  class="col-md-8 col-sm-8 col-xs-12">
-                          {% if work.backup == true %}是{% else %}否{% endif %}
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label class="control-label col-md-4 col-sm-4 col-xs-12" for="last-name">审核人员<span class="required">*</span>
-                        </label>
-                          <input id="{{ form.audit.name }}" name="{{ form.audit.name }}" type="hidden" value="{{ work.audit }}">
-                        <div class="col-md-8 col-sm-8 col-xs-12">
-                          {{ work.audit }}
-                        </div>
-                      </div>
 
-
-                      <div class="ln_solid"></div>
-                      <div class="form-group">
-                        <div class="col-md-12 col-sm-12 col-xs-12 col-md-offset-3">
-                          <button class="btn btn-primary" type="button" onclick="{location.href='{{ url_for('dev_work') }}'}">取消</button>
-                          <button type="submit" class="btn btn-success">提交</button>
+                        <div class="ln_solid"></div>
+                        <div class="form-group">
+                            <div class="col-md-12 col-sm-12 col-xs-12 col-md-offset-3">
+                                <button class="btn btn-primary" type="button"
+                                        onclick="{location.href='{{ url_for('dev_work') }}'}">取消
+                                </button>
+                                <button type="submit" class="btn btn-success">提交</button>
+                            </div>
                         </div>
-                      </div>
-                      <br>
-                      <div class="form-group">
-                        <div class="col-md-12 col-sm-12 col-xs-12 col-md-offset-3">
-                            {% with messages = get_flashed_messages() %}
-                            {% if messages %}
-                                 <ul>
+                        <br>
+                        <div class="form-group">
+                            <div class="col-md-12 col-sm-12 col-xs-12 col-md-offset-3">
+                                {% with messages = get_flashed_messages() %}
+                                {% if messages %}
+                                <ul>
                                     {% for message in messages %}
-                                        <li><font color='#FF0000'>{{ message }}</font></li>
+                                    <li><font color='#FF0000'>{{ message }}</font></li>
                                     {% endfor %}
-                                 </ul>
-                            {% endif %}
-                            {% endwith %}
+                                </ul>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
                         </div>
-                      </div>
-
-
-                  </div>
-                </div>
-        </div>
-        <div id="last" class="col-md-9 col-sm-9 col-xs-12">
-            <div class="x_panel">
-                <div class="x_content">
-                      <div class="form-group">
-                        <div class="col-md-12 col-sm-12 col-xs-12 ">
-                           <label for="message">SQL内容:</label>
-                            <textarea id="{{ form.sql_content.name }}" name="{{ form.sql_content.name }}" required="required" class="form-control" name="message" data-parsley-trigger="keyup" placeholder="请输入类似sql： use test; create table t1( id int);"
-                            data-parsley-validation-threshold="50" rows="20">{{ work.sql_content }}</textarea>
-                            <br>
-                            <button id="slqcheck" type="button" class="btn btn-info" onclick="sqlcheck()">检查SQL</button>
-                         </div>
-                       </div>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div id="last" class="col-md-9 col-sm-9 col-xs-12">
+                <div class="x_panel">
+                    <div class="x_content">
+                        <div class="form-group">
+                            <div class="col-md-12 col-sm-12 col-xs-12 ">
+                                <label for="message">SQL内容:</label>
+                                <textarea id="{{ form.sql_content.name }}" name="{{ form.sql_content.name }}"
+                                          required="required" class="form-control" name="message"
+                                          data-parsley-trigger="keyup"
+                                          placeholder="请输入类似sql： use test; create table t1( id int);"
+                                          data-parsley-validation-threshold="50"
+                                          rows="20">{{ work.sql_content }}
+                                </textarea>
+                                <br>
+                                <button id="slqcheck" type="button" class="btn btn-info" onclick="sqlcheck()">检查SQL</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </form>
     </div>
- </div>
+</div>
 
 <script src="{{url_for('static',filename='vendors/jquery/dist/jquery.min.js')}}"></script>
 <script>
@@ -133,16 +138,9 @@
            } else  {
                alert(data.msg);
            }
-
 	        }
-
         })
     }
  }
-
-
-
-
-
 </script>
 {% endblock %}

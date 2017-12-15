@@ -7,13 +7,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_principal import Identity, AnonymousIdentity, identity_changed, Permission, RoleNeed
 import time
 import random
-
 from sqlalchemy import func
 from app.utils import *
 import platform
+
 config = app.config
-
-
 
 
 admin_permission = Permission(RoleNeed('admin'))
@@ -44,10 +42,14 @@ def login():
                 flash(u'密码不正确！')
         else:
             flash(u'用户不存在！')
-
-
-
     return render_template('login.html', form=form)
+
+
+@app.route('/')
+def index():
+    return redirect('login')
+
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -67,16 +69,16 @@ def passwd():
                 current_user.hash_pass = generate_password_hash(form.new_pass.data)
                 db.session.commit()
                 return redirect('dashboard')
-
-
     return render_template('passwd.html', form=form)
+
 
 @app.route('/mysql_db')
 @admin_permission.require()
 def mysql_db():
     dbconfigs=Dbconfig.query.all()
-
     return render_template('mysql_db.html',dbconfigs=dbconfigs)
+
+
 @app.route('/mysql_db/create', methods = ['GET', 'POST'])
 @admin_permission.require()
 def mysql_db_create():
@@ -360,7 +362,7 @@ def dev_work_create():
             audit=User.query.filter(User.name == work.audit).first()
             work.srole = audit.srole
             work.sql_content = sqlContent
-
+            print(sqlContent)
             result = sqlautoReview(sqlContent, dbConfig, isBackup)
             if result or len(result) != 0:
                 jsonResult = json.dumps(result)
@@ -528,15 +530,7 @@ def dev_chart(days=7):
             workstatus[u'管理员中止']+=1
         elif work.status == 8:
             workstatus[u'审核人驳回']+=1
-
-
     return render_template('dev_chart.html',dayrange=dayrange, daycounts=daycounts, workstatus=workstatus, days=days)
-
-
-
-
-
-
 
 
 @app.route('/audit_work')
@@ -544,6 +538,8 @@ def dev_chart(days=7):
 def audit_work():
     works = Work.query.filter(Work.audit == current_user.name, Work.status != 1)
     return render_template('audit_work.html', works=works)
+
+
 @app.route('/audit_work_pending')
 @audit_permission.require()
 def audit_work_pending():
@@ -559,7 +555,6 @@ def audit_work_assign(id):
         work.srole = 0
         work.audit = form.audit.data
         db.session.commit()
-
 
         if mailonoff == 'ON':
             audit=User.query.filter(User.name == work.audit).first()
@@ -578,21 +573,21 @@ def audit_work_reject(id):
     flash(u'驳回工单成功！')
     return redirect('audit_work')
 
+
 @app.route('/audit_work/execute/<int:id>')
 @audit_permission.require()
 def audit_work_execute(id):
-
-
-    t=Thread(target=executeFinal,args=(id,))
+    listrollbacksql = None
+    t=Thread(target=executeFinal,args=(id,listrollbacksql))
     t.start()
 
     if mailonoff == 'ON':
         work = Work.query.filter(Work.id == id).first()
         dev = User.query.filter(User.name == work.dev).first()
         send_email(u'【inception_web】完成工单通知', u'您好，你发起的工单（' + work.name + u'）已执行，请稍后查看结果，谢谢！', dev.email)
-
-
     return redirect('audit_work')
+
+
 @app.route('/audit_work/timer/<int:id>', methods = ['GET', 'POST'])
 @audit_permission.require()
 def audit_work_timer(id):
@@ -609,6 +604,8 @@ def audit_work_timer(id):
         else:
             flash(u'已过时间点')
     return render_template('audit_work_timer.html', work=work)
+
+
 @app.route('/audit_work/timer/cancel/<int:id>')
 @audit_permission.require()
 def audit_work_timer_cancel(id):
@@ -617,6 +614,8 @@ def audit_work_timer_cancel(id):
     work.timer = None
     db.session.commit()
     return redirect(url_for('audit_work_timer',id=id))
+
+
 @app.route('/audit_work/timer/view')
 @audit_permission.require()
 def audit_work_timer_view():
@@ -629,24 +628,47 @@ def audit_work_timer_view():
     return render_template('audit_work_timer_view.html', works=works)
 
 
-
+#@app.route('/audit_work/exportsql/<int:id>')
+#@audit_permission.require()
+#def audit_work_exportsql(id):
+#    listSqlBak = getRollbackSqlList(id)
+#    base_dir = os.path.dirname(__file__)
+#    tmp_dir = base_dir+'/temp'
+#    if not os.path.exists(tmp_dir):
+#        os.makedirs(tmp_dir)
+#    fp = open(tmp_dir + '/backup.sql', 'w')
+#    for i in range(len(listSqlBak)):
+#        fp.write(listSqlBak[i]+'\n')
+#    fp.close()
+#    response = make_response(send_file(tmp_dir + '/backup.sql'))
+#    response.headers["Content-Disposition"] = "attachment; filename=ex.sql;"
+#    return response
 
 @app.route('/audit_work/exportsql/<int:id>')
-@audit_permission.require()
+#@audit_permission.require()
 def audit_work_exportsql(id):
-    #listSqlBak = inc.getRollbackSqlList(id)
     listSqlBak = getRollbackSqlList(id)
-    base_dir = os.path.dirname(__file__)
-    tmp_dir = base_dir+'/temp'
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir)
-    fp = open(tmp_dir + '/backup.sql', 'w')
+    tmplist = []
     for i in range(len(listSqlBak)):
-        fp.write(listSqlBak[i]+'\n')
-    fp.close()
-    response = make_response(send_file(tmp_dir + '/backup.sql'))
-    response.headers["Content-Disposition"] = "attachment; filename=ex.sql;"
-    return response
+        tmplist.append(listSqlBak[i])
+    res = make_response('\n'.join(tmplist))
+    return res
+
+
+@app.route('/audit_rollback/<int:id>')
+@audit_permission.require()
+def audit_rollback(id):
+    listrollbacksql = getRollbackSqlList(id)
+    t = Thread(target=executeFinal, args=(id,listrollbacksql))
+    t.start()
+
+    if mailonoff == 'ON':
+        work = Work.query.filter(Work.id == id).first()
+        dev = User.query.filter(User.name == work.dev).first()
+        send_email('【inception_web】完成工单通知', '您好，你发起的rollback工单（' + work.name + '）已执行，请稍后查看结果，谢谢！', dev.email)
+    return redirect('audit_work')
+
+
 @app.route('/audit_chart/<int:days>')
 @audit_permission.require()
 def audit_chart(days=7):
@@ -686,13 +708,7 @@ def audit_chart(days=7):
             workstatus[u'管理员中止']+=1
         elif work.status == 8:
             workstatus[u'审核人驳回']+=1
-
-
-
-
     return render_template('audit_chart.html',dayrange=dayrange, daycounts=daycounts, workstatus=workstatus, days=days)
-
-
 
 
 
@@ -716,7 +732,6 @@ def work_stop(id):
     work = Work.query.get(id)
     stoptimer(work)
 
-
     if current_user.role == 'dev':
         work.status = 5
         work.finish_time = datetime.now()
@@ -737,15 +752,11 @@ def work_stop(id):
         db.session.commit()
         if mailonoff == 'ON':
             stop_email(work)
+
+
 def stop_email(work):
     dev = User.query.filter(User.name == work.dev).first()
     audit = User.query.filter(User.name == work.audit).first()
     send_email(u'【inception_web】中止工单通知', u'您好，你有一条工单（' + work.name + u'）已被'+current_user.name+u'中止，请知悉，谢谢！', dev.email)
     send_email(u'【inception_web】中止工单通知', u'您好，你有一条工单（' + work.name + u'）已被'+current_user.name+u'中止，请知悉，谢谢！', audit.email)
-
-
-
-
-
-
 
