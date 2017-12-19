@@ -21,6 +21,7 @@
                             <th>完成时间</th>
                             <th>状态</th>
                             <th>操作</th>
+                            <th>回滚操作</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -61,7 +62,13 @@
                             </td>
                             <td>
                                 <a type="button" href="{{ url_for('work_view',id=work.id) }}" class="btn btn-primary btn-xs">查看</a>
-                                <a type="button" onclick="javascript:if (confirm('确定要回滚?')) href='{{ url_for('audit_rollback',id=work.id) }}';" class="btn btn-danger btn-xs">回滚</a>
+			    </td>
+			    <td>
+			    {% if work.status == 0 and work.backup == true %}
+			        <a type="button" onclick="javascript:if (confirm('确定要回滚?')) href='{{ url_for('audit_rollback',id=work.id) }}';" class="btn btn-danger btn-xs">回滚</a>
+			    {% else %}
+			        <a type="buttion" class="btn btn-info btn-xs">无法回滚</a>
+			    {% endif %}
                             </td>
                             <!--<td>
                                 {% if work.status ==  1 %}
