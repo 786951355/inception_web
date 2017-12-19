@@ -30,4 +30,5 @@ INCEPTION_REMOTE_BACKUP_PASSWORD='test'
 
 #Other optins
 CRITICAL_DDL_ON_OFF='OFF'
+# open master slave audit
 AUDIT_SROLE_ON_OFF='OFF'

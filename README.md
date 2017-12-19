@@ -1,16 +1,18 @@
 # Inception_web
 本系统是MySQL自动化管理工具，配合Inception使用，基于archer进行二次开发，进行了一些补充优化。
+我fork了原作者https://github.com/496080199/inception_web.git的然后修改一些小地方。
+
 ## 功能说明：
 - __SQL自主审核__
 - __自动审核+人工审核__
 - __定时执行SQL__
 - __主副人工审核__（可配置)
-- __回滚sql下载__
+- __回滚sql查看与直接回滚__
 - __数据库配置__
 - __用户权限配置__
 - __用户分配数据库权限__
 - __工单查询管理__
-- __工单邮件通知__
+- __工单邮件通知__（可配置）
 - __查看慢查询__
 - __MySQLTuner生成配置分析报告__（需安装perl)
 - __SQLAdvisor语句优化功能__（安装模块）
@@ -30,7 +32,9 @@ flush privileges;<br>
 inc.cnf使用之前创建的mysql主机帐号密码<br>
 
 3.下载系统源码<br>
-git clone https://github.com/496080199/inception_web.git<br>
+# 源地址
+#git clone https://github.com/496080199/inception_web.git<br>
+git clone https://github.com/786951355/inception_web.git<br>
 或使用zip包下载<br>
 
 3.安装python2.7依赖<br>
@@ -42,6 +46,7 @@ pip install -r requirements.txt<br>
 复制config_example.py为config.py<br>
 根据自己的环境进行相应修改config.py中参数<br>
 注：查看慢查询需设置mysql的参数log_output=table将慢查询记录输出到mysql库的slow_log表中
+测试的时候发现mysql binlog的格式为ROW的时候无法生成回滚，mixed可以，但是官方说两者都可以。
 
 5.启动运行<br>
 测试环境：<br>
@@ -55,8 +60,8 @@ pip install gunicorn<br>
 关闭：./stop.sh<br>
 
 6.访问<br>
-
-http://(部署服务器IP):5000/login<br>
+原作者没有将首页跳转到Login，此处已修复
+http://(部署服务器IP):5000/<br>
 初始帐号密码：admin/admin<br>
 注：防火墙端口5000需要放开<br>
 
@@ -66,10 +71,9 @@ http://(部署服务器IP):5000/login<br>
 SQLAdvisor安装：<br>
 下载 https://github.com/Meituan-Dianping/SQLAdvisor/archive/master.zip 压缩包放至本系统根目录下，<br>
 即可通过模块管理进行安装，安装需要几分钟，请耐心等待后刷新页面看到。<br>
+web上直接安装SQLAdvisor没成功。。。。。
 
 <br>
-<br>
--------有更多idea欢迎和我一起交流分享，谢谢！我的QQ：496080199<br>
 <br>
 设计原理来源于archer,请大家多关注<br>
 https://github.com/jly8866/archer<br>
